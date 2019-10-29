@@ -1,12 +1,12 @@
 package main
 
 import (
-	"Gophercises/Exercise7/db"
+	"Gophercises/Exercise7/task/db"
 	"Gophercises/Exercise7/task/cmd"
+
 	"fmt"
 	"os"
 	"path/filepath"
-
 	"github.com/mitchellh/go-homedir"
 )
 
