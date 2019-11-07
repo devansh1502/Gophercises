@@ -4,6 +4,7 @@ import (
 	"Gophercises/Exercise18/transform/primitive"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -26,27 +27,62 @@ func main() {
 		}
 		defer file.Close()
 		ext := filepath.Ext(header.Filename)[1:]
-		out, err := primitive.Transform(file, ext, 200, primitive.WithMode(primitive.ModeRotatedRect))
+		a, err := genImage(file, ext, 33, primitive.ModeCircle)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		// Creating a temp file
-		outFile, err := tempfile("", ext)
-		if err != nil {
+			panic(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		defer outFile.Close()
-		// Copy Everything from the Primitive into the file
-		io.Copy(outFile, out)
-		// Then Redirect
-		redirURL := fmt.Sprintf("/%s", outFile.Name())
-		http.Redirect(w, r, redirURL, http.StatusFound)
+		file.Seek(0, 0)
+		b, err := genImage(file, ext, 33, primitive.ModeEllipse)
+		if err != nil {
+			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		file.Seek(0, 0)
+		c, err := genImage(file, ext, 33, primitive.ModePolygon)
+		if err != nil {
+			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		file.Seek(0, 0)
+		d, err := genImage(file, ext, 33, primitive.ModeCombo)
+		if err != nil {
+			panic(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
+		html := `<html><body>
+		{{range .}}
+			<img src = "/{{.}}">
+		{{end}}
+		</body></html>`
+		tpl := template.Must(template.New("").Parse(html))
+		images := []string{a, b, c, d}
+		tpl.Execute(w, images)
 	})
 	fs := http.FileServer(http.Dir("./img"))
 	mux.Handle("/img/", http.StripPrefix("/img", fs))
 	log.Fatal(http.ListenAndServe(":3000", mux))
+}
+
+func genImage(r io.Reader, ext string, numShapes int, mode primitive.Mode) (string, error) {
+	out, err := primitive.Transform(r, ext, numShapes, primitive.WithMode(mode))
+	if err != nil {
+		return "", nil
+	}
+	// Creating a temp file
+	outFile, err := tempfile("", ext)
+	if err != nil {
+		return "", nil
+	}
+	defer outFile.Close()
+	// Copy Everything from the Primitive into the file
+	io.Copy(outFile, out)
+	return outFile.Name(), nil
 }
 
 func tempfile(prefix, ext string) (*os.File, error) {
