@@ -44,33 +44,31 @@ func Transform(image io.Reader, ext string, numShapes int, opts ...func() []stri
 	}
 	in, err := tempfile("in_", ext)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("primitive: failed to create temporary input file")
 	}
 	defer os.Remove(in.Name())
 	out, err := tempfile("in_", ext)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("primitive: failed to create temporary output file")
 	}
 	defer os.Remove(out.Name())
 
 	// Read Image into in file
 	_, err = io.Copy(in, image)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("primitive: failed to copy image into temp input file")
 	}
 
 	// Run Primitive w/ -i in.Name () -o out.Name()
 	stdCombo, err := primitive(in.Name(), out.Name(), numShapes, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("primitive: failed to run the primitive command. stdcombo=%s", stdCombo)
 	}
-	fmt.Println(stdCombo)
-
 	// Read out into a reader, return reader, delete out
 	b := bytes.NewBuffer(nil)
 	_, err = io.Copy(b, out)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("primitive: failed to copy output file into byte buffer")
 	}
 	return b, nil
 
