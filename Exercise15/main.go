@@ -51,7 +51,7 @@ func sourceCodeHandler(w http.ResponseWriter, r *http.Request) {
 	// if style == nil {
 	// 	style = styles.Fallback
 	// }
-	formatter := html.New(html.TabWidth(2), html.WithLineNumbers(), html.LineNumbersInTable(), html.HighlightLines(lines))
+	formatter := html.New(html.TabWidth(2), html.WithLineNumbers(true), html.LineNumbersInTable(true), html.HighlightLines(lines))
 	w.Header().Set("Content-type", "text/html")
 	fmt.Fprint(w, "<style>pre {font-size: 1.2em ;}</style>")
 	formatter.Format(w, style, iterator)
